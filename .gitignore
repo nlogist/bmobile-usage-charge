@@ -1,0 +1,12 @@
+# 更新する前のチェック項目
+# $ cp bmobile-id.pl bmobile.pl
+
+# bmobile.pl の編集
+# my $userid = 'UserID for mypage.bmobile.ne.jp';
+# my $passwd = 'Password for mypage.bmobile.ne.jp';
+# my $event = 'IFTTT event name';
+# my $secret_key = 'IFTTT secret key';
+
+
+# アカウント埋め込みで実際に使用しているスクリプト
+bmobile-id.pl

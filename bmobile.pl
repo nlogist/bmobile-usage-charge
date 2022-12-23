@@ -31,13 +31,13 @@ my $scraper_phones = scraper {
      };
 };
 my $scraper_usage = scraper {
-    process '//span/div[1]/div/div[1]/dl[2]/dd/span[1]/span', 'text' => 'TEXT';
+    process '//span/div[1]/div/div[1]/dl[3]/dd/span[1]/span', 'text' => 'TEXT';
 };
 my $scraper_limit = scraper {
-    process '//span/div[1]/div/div[1]/dl[2]/dd/span[2]/span', 'text' => 'TEXT';
+    process '//span/div[1]/div/div[1]/dl[3]/dd/span[2]/span', 'text' => 'TEXT';
 };
 my $scraper_period = scraper {
-    process '//span/div[1]/div/div[1]/dl[2]/dd/span[3]', 'text' => 'TEXT';
+    process '//span/div[1]/div/div[1]/dl[3]/dd/span[3]', 'text' => 'TEXT';
 };
 my $scraper_charge = scraper {
     process '//table/tr[5]/td/span', 'text' => 'TEXT';

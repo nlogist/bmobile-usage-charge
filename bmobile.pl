@@ -6,12 +6,22 @@ use Number::Format qw(:subs);
 use DateTime;
 use List::MoreUtils qw(uniq);
 use utf8;
+use LWP::UserAgent;
+use JSON;
 binmode STDOUT, ':utf8';
 
-my $userid = 'UserID for mypage.bmobile.ne.jp';
-my $passwd = 'Password for mypage.bmobile.ne.jp';
-my $event = 'IFTTT event name';
-my $secret_key = 'IFTTT secret key';
+# bmobile credentials
+my $bmobile_user_id = 'User ID for mypage.bmobile.ne.jp';
+my $bmobile_passwd = 'Password for mypage.bmobile.ne.jp';
+
+# LINE Messaging API endpoint
+my $url = 'https://api.line.me/v2/bot/message/push';
+
+# LINE Channel Access Token
+my $channel_access_token = 'LINE channel access token';
+
+# LINE Group ID
+my $line_group_id = 'LINE group ID';
 
 my $dt = DateTime->now(time_zone => 'local');
 
@@ -19,8 +29,8 @@ my $mech = WWW::Mechanize->new();
 $mech->get('https://mypage.bmobile.ne.jp/') or die;
 $mech->submit_form(
     fields => {
-        'josso_username' => $userid,
-        'josso_password' => $passwd,
+        'josso_username' => $bmobile_user_id,
+        'josso_password' => $bmobile_passwd,
     }
 );
 
@@ -58,6 +68,7 @@ if ($#ARGV == -1) {
 }
 my @uniq_keys = uniq sort @keys;
 
+my $message_text = "";
 foreach my $key (@uniq_keys) {
     my $phone_number = %$phone_numbers{$key};
     $mech->get('https://mypage.bmobile.ne.jp/checkout/status?wicket:interface=:1:ddc::IOnChangeListener::&ddc=' . $key) or die;
@@ -72,6 +83,36 @@ foreach my $key (@uniq_keys) {
     my ($charge) = $result_charge->{text} =~ /(（.*）)/;
 
     print $$, ":", $dt->strftime('%Y%m%d:%H%M%S.%3N'), "\t", $phone_number, "\t", $usage, "\t", substr($limit, 0, -2), "\t", $charge, "\t", $period, "\n";
-    $mech->get("http://maker.ifttt.com/trigger/" . $event . "/with/key/" . $secret_key . "?value1=" . $phone_number . "&value2=" . $usage . "MB / " . $limit . "&value3=" . $charge . $period)
-        if ($event ne '') or die;
+
+    $message_text .= "電話番号:" . $phone_number . "\n" . "使用量" . $usage . "MB / " . $limit . "\n" . "期間: " . $charge . $period . "\n\n";
+}
+$message_text = substr($message_text, 0, -2);
+
+# Request payload
+my $post_data = {
+	to => $line_group_id,
+	messages => [
+	{
+		type => 'text',
+		text => $message_text,
+	}
+	],
+};
+
+# Initialize HTTP client
+my $ua = LWP::UserAgent->new;
+my $req = HTTP::Request->new(POST => $url);
+$req->header('Content-Type' => 'application/json');
+$req->header('Authorization' => "Bearer $channel_access_token");
+$req->content(encode_json($post_data));
+
+# Send request
+my $res = $ua->request($req);
+
+# Output execution result to STDERR
+if ($res->is_success) {
+	print STDERR "[INFO] Message sent successfully: ", $res->decoded_content, "\n";
+} else {
+	print STDERR "[ERROR] Failed to send message: ", $res->status_line, "\n";
+	print STDERR "[ERROR] Response body: ", $res->decoded_content, "\n";
 }
